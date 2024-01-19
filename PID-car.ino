@@ -1,61 +1,69 @@
 #include <QTRSensors.h>
 
-const int m11Pin = 7;
-const int m12Pin = 6;
-const int m21Pin = 5;
-const int m22Pin = 4;
-const int m1Enable = 11;
-const int m2Enable = 10;
+// pins controlling the motors
+const int g_m11Pin = 7;
+const int g_m12Pin = 6;
+const int g_m21Pin = 5;
+const int g_m22Pin = 4;
+const int g_m1Enable = 11;
+const int g_m2Enable = 10;
 
-// increase kp’s value and see what happens
-float kp = 10;
-float ki = 0.001;
-float kd = 3;
+// motor constraints
+const int g_maxSpeed = 255;
+const int g_minSpeed = -255;
+const int g_baseSpeed = 200;
 
-int error = 0;
-int lastError = 0;
+// PID controller constants
+float g_kp = 10;
+float g_ki = 0.001;
+float g_kd = 3;
+int g_lastError = 0;
 
-const int maxSpeed = 255;
-const int minSpeed = -255;
-const int baseSpeed = 200;
+// sensor related
+QTRSensors g_qtr;
+const int g_sensorCount = 6;
+uint16_t g_sensorValues[g_sensorCount];
 
-QTRSensors qtr;
-const int sensorCount = 6;
-uint16_t sensorValues[sensorCount];
-int sensors[sensorCount] = { 0, 0, 0, 0, 0, 0 };
-
+// integrative functions related
 #define INTEGRAL_SIZE 100
-int recordedErrors[INTEGRAL_SIZE];
-int recErrIdx = 0;
+int g_recordedErrors[INTEGRAL_SIZE];
+int g_recordedErrIdx = 0;
+
+// updates the integrative rolling window array
 void addRecordedError(int p_error)
 {
-    recordedErrors[recErrIdx] = p_error;
+    g_recordedErrors[g_recordedErrIdx] = p_error;
 
-    recErrIdx ++;
+    g_recordedErrIdx ++;
     // loop around, rolling average
-    if(recErrIdx >= INTEGRAL_SIZE)
+    if(g_recordedErrIdx >= INTEGRAL_SIZE)
     {
-        recErrIdx = 0;
+        g_recordedErrIdx = 0;
     }
 }
+
+// sets the integrative rolling window error array to 0
 void initRecordedError()
 {
     for(int i = 0; i < INTEGRAL_SIZE; i++)
     {
-        recordedErrors[i] = 0;
+        g_recordedErrors[i] = 0;
     }
 }
+
+// returns the sum of the rolling window for the Integrative control
 int getIntegral()
 {
     int integral = 0;
     for(int i = 0; i < INTEGRAL_SIZE; i++)
     {
-        integral += recordedErrors[i];
+        integral += g_recordedErrors[i];
     }
 
     return integral/INTEGRAL_SIZE;
 }
 
+// calibration defines 
 #define CALIBRATION_TURN_TIME 600
 #define NUMBER_OF_TURNS 6
 #define TURN_MOTOR_SPEED 120
@@ -72,29 +80,28 @@ int getIntegral()
 #define MAX_QTR_SENSITIVITY 5000
 #define MIN_QTR_SENSITIVITY 0
 
-void switchTurnMotorSpeeds(int &turnMotorSpeed1, int& turnMotorSpeed2)
+// basically makes the two wheels spin in the other direction for the self calibration
+void switchTurnMotorSpeeds(int &p_turnMotorSpeed1, int& p_turnMotorSpeed2)
 {
-    if(turnMotorSpeed1 == -TURN_MOTOR_SPEED)
+    if(p_turnMotorSpeed1 == -TURN_MOTOR_SPEED)
     {
-        turnMotorSpeed1 = TURN_MOTOR_SPEED;
-        turnMotorSpeed2 = -TURN_MOTOR_SPEED;
+        p_turnMotorSpeed1 = TURN_MOTOR_SPEED;
+        p_turnMotorSpeed2 = -TURN_MOTOR_SPEED;
     }
     else
     {
-        turnMotorSpeed2 = TURN_MOTOR_SPEED;
-        turnMotorSpeed1 = -TURN_MOTOR_SPEED;   
+        p_turnMotorSpeed2 = TURN_MOTOR_SPEED;
+        p_turnMotorSpeed1 = -TURN_MOTOR_SPEED;   
     }
 }
 
+// self calibration done using data from the sensor.
+// at first not perfect but as it does the calibration it gets better
 void smartCalibrateSensor()
 {
     Serial.print("in smart calibration\n");
     digitalWrite(LED_BUILTIN, HIGH);	// turn on Arduino's LED to indicate we are in calibration mode
-	// calibrate the sensor. For maximum grade the line follower should do the movement itself, without
-	// human interaction.digitalWrite(LED_BUILTIN, HIGH);	// turn on Arduino's LED to indicate we are in calibration mode
-	// calibrate the sensor. For maximum grade the line follower should do the movement itself, without
-	// human interaction.
-	
+
     bool finishedCalibration = false;
     int currentTurnIdx = 0;
     int turnMotorSpeed1, turnMotorSpeed2;
@@ -102,15 +109,15 @@ void smartCalibrateSensor()
 	bool turningDirection = RIGHT;
     turnMotorSpeed1 = TURN_MOTOR_SPEED;
     turnMotorSpeed2 = -TURN_MOTOR_SPEED;
-	qtr.calibrate();
+	g_qtr.calibrate();
 
 	int error = 0;
 	setMotorSpeed(turnMotorSpeed1, turnMotorSpeed2);
 
     while(!finishedCalibration)
     {
-		qtr.calibrate();
-		error = map(qtr.readLineBlack(sensorValues), MIN_QTR_SENSITIVITY, MAX_QTR_SENSITIVITY, MIN_CALIBRATION_SENSITIVITY, MAX_CALIBRATION_SENSITIVITY);
+		g_qtr.calibrate();
+		error = map(g_qtr.readLineBlack(g_sensorValues), MIN_QTR_SENSITIVITY, MAX_QTR_SENSITIVITY, MIN_CALIBRATION_SENSITIVITY, MAX_CALIBRATION_SENSITIVITY);
 		
         if(error > MAX_CALIBRATION_ERROR && turningDirection == LEFT)
         {
@@ -124,7 +131,6 @@ void smartCalibrateSensor()
 
             setMotorSpeed(turnMotorSpeed1, turnMotorSpeed2);
 			turningDirection = RIGHT;
-			Serial.print("Went Left. Turning Right");
         }
 		if(error < MIN_CALIBRATION_ERROR && turningDirection == RIGHT)
         {
@@ -138,69 +144,75 @@ void smartCalibrateSensor()
 
             setMotorSpeed(turnMotorSpeed1, turnMotorSpeed2);
 			turningDirection = LEFT;
-			Serial.print("Went Right. Turning Left");
         }
     }
 
 	digitalWrite(LED_BUILTIN, LOW);
 }
 
+// how it was before for refference if not working
+// g_qtr.setSensorPins((const uint8_t[])
+// 	{
+// 		A0, A1, A2, A3, A4, A5
+// 	}, g_sensorCount);
+const uint8_t g_sensorPins[] = { A0, A1, A2, A3, A4, A5 };
+
 void setup()
 {
-	// pinMode setup
-	pinMode(m11Pin, OUTPUT);
-	pinMode(m12Pin, OUTPUT);
-	pinMode(m21Pin, OUTPUT);
-	pinMode(m22Pin, OUTPUT);
-	pinMode(m1Enable, OUTPUT);
-	pinMode(m2Enable, OUTPUT);
-	qtr.setTypeAnalog();
-	qtr.setSensorPins((const uint8_t[])
-	{
-		A0, A1, A2, A3, A4, A5
-	}, sensorCount);
-
-	pinMode(LED_BUILTIN, OUTPUT);
-	
-    smartCalibrateSensor();
-    
     Serial.begin(115200);
+
+	// pinMode setup
+	pinMode(g_m11Pin, OUTPUT);
+	pinMode(g_m12Pin, OUTPUT);
+	pinMode(g_m21Pin, OUTPUT);
+	pinMode(g_m22Pin, OUTPUT);
+	pinMode(g_m1Enable, OUTPUT);
+	pinMode(g_m2Enable, OUTPUT);
+	pinMode(LED_BUILTIN, OUTPUT);
+
+	// sensor setup and calibration
+	g_qtr.setTypeAnalog();
+	g_qtr.setSensorPins(g_sensorPins, g_sensorCount);
+    smartCalibrateSensor();
+
+	// integrative array init
     initRecordedError();
 }
 
+// error range for the sensor 
 #define MIN_ERROR -50
 #define MAX_ERROR 50
 
 // calculate PID value based on error, kp, kd, ki
-int pidControl(float kp, float ki, float kd, int &lastError, int error)
+int pidControl(float p_kp, float p_ki, float p_kd, int &p_lastError, int p_error)
 {
-    int p = error;
-	int d = error - lastError;
+    int p = p_error;
+	int d = p_error - p_lastError;
     
-    addRecordedError(error);
+    addRecordedError(p_error);
 	int i = getIntegral();
-	if(-1 <= error && error <= 1) {
+	if(-1 <= p_error && p_error <= 1) {
         i = 0;
     }
 
-    lastError = error;
+    p_lastError = p_error;
 
-	return kp *p + ki *i + kd * d;
+	return p_kp *p + p_ki *i + p_kd * d;
 }
 
-void constrainMotorSpeeds(int &m1Speed, int &m2Speed, int motorSpeed, int error)
+void constrainMotorSpeeds(int &p_m1Speed, int &p_m2Speed, int p_speedCorrection, int p_error)
 {
 	// a bit counter intuitive because of the signs
 	// basically in the first if, you substract the error from m1Speed (you add the negative)
 	// in the 2nd if you add the error to m2Speed (you substract the negative)
 	// it's just the way the values of the sensors and/or motors lined up
-	if (error < 0)
+	if (p_error < 0)
 	{
-		m1Speed += motorSpeed;
+		p_m1Speed += p_speedCorrection;
 	}
-	else if (error > 0)
+	else if (p_error > 0)
 	{
-		m2Speed -= motorSpeed;
+		p_m2Speed -= p_speedCorrection;
 	}
 
 	// make sure it doesn't go past limits. You can use -255 instead of 0 if calibrated programmed
@@ -208,91 +220,93 @@ void constrainMotorSpeeds(int &m1Speed, int &m2Speed, int motorSpeed, int error)
 	// making sure we don't go out of bounds
 	// maybe the lower bound should be negative, instead of 0? This of what happens when making a
 	// steep turn
-	m1Speed = constrain(m1Speed, 0, maxSpeed);
-	m2Speed = constrain(m2Speed, 0, maxSpeed);
+	p_m1Speed = constrain(p_m1Speed, 0, g_maxSpeed);
+	p_m2Speed = constrain(p_m2Speed, 0, g_maxSpeed);
+
+	// WARNING! SPEED CORRECTION OFTEN GOES BEYOND BASE SPEED!!
 }
 
 void loop()
 {
-    int error = map(qtr.readLineBlack(sensorValues), MIN_QTR_SENSITIVITY, MAX_QTR_SENSITIVITY, MIN_ERROR, MAX_ERROR);
-	int motorSpeed = pidControl(kp, ki, kd ,lastError, error);	// = error in this case
-	int m1Speed = baseSpeed;
-	int m2Speed = baseSpeed;
-	Serial.println(motorSpeed);
-	constrainMotorSpeeds(m1Speed, m2Speed, motorSpeed, error);
+    int error = map(g_qtr.readLineBlack(g_sensorValues), MIN_QTR_SENSITIVITY, MAX_QTR_SENSITIVITY, MIN_ERROR, MAX_ERROR);
+	int speedCorrection = pidControl(g_kp, g_ki, g_kd ,g_lastError, error);
+	int m1Speed = g_baseSpeed;
+	int m2Speed = g_baseSpeed;
 
+	constrainMotorSpeeds(m1Speed, m2Speed, speedCorrection, error);
 	setMotorSpeed(m1Speed, m2Speed);
-   
-	// DEBUGGING
-	// if(m1Speed > m2Speed)
-    // {
-    //     Serial.print("go left\n");
-    // }
-    // else if (m1Speed != m2Speed)
-    // {
-    //     Serial.print("go right\n");
-    // }
-	// Serial.print("Error: ");
-	// Serial.println(error);
-	// Serial.print("M1 speed: ");
-	// Serial.println(m1Speed);
-	//
-	// Serial.print("M2 speed: ");
-	// Serial.println(m2Speed);
-	//
-	// delay(250);
 }
 
 // each arguments takes values between -255 and 255. The negative values represent the motor speed
 // in reverse.
-void setMotorSpeed(int motor1Speed, int motor2Speed)
+void setMotorSpeed(int p_motor1Speed, int p_motor2Speed)
 {
 	// remove comment if any of the motors are going in reverse
 	// motor1Speed = -motor1Speed;
 	// motor2Speed = -motor2Speed;
-	if (motor1Speed == 0)
+	if (p_motor1Speed == 0)
 	{
-		digitalWrite(m11Pin, LOW);
-		digitalWrite(m12Pin, LOW);
-		analogWrite(m1Enable, motor1Speed);
+		digitalWrite(g_m11Pin, LOW);
+		digitalWrite(g_m12Pin, LOW);
+		analogWrite(g_m1Enable, p_motor1Speed);
 	}
 	else
 	{
-		if (motor1Speed > 0)
+		if (p_motor1Speed > 0)
 		{
-			digitalWrite(m11Pin, HIGH);
-			digitalWrite(m12Pin, LOW);
-			analogWrite(m1Enable, motor1Speed);
+			digitalWrite(g_m11Pin, HIGH);
+			digitalWrite(g_m12Pin, LOW);
+			analogWrite(g_m1Enable, p_motor1Speed);
 		}
 
-		if (motor1Speed < 0)
+		if (p_motor1Speed < 0)
 		{
-			digitalWrite(m11Pin, LOW);
-			digitalWrite(m12Pin, HIGH);
-			analogWrite(m1Enable, -motor1Speed);
+			digitalWrite(g_m11Pin, LOW);
+			digitalWrite(g_m12Pin, HIGH);
+			analogWrite(g_m1Enable, -p_motor1Speed);
 		}
 	}
 
-	if (motor2Speed == 0)
+	if (p_motor2Speed == 0)
 	{
-		digitalWrite(m21Pin, LOW);
-		digitalWrite(m22Pin, LOW);
-		analogWrite(m2Enable, motor2Speed);
+		digitalWrite(g_m21Pin, LOW);
+		digitalWrite(g_m22Pin, LOW);
+		analogWrite(g_m2Enable, p_motor2Speed);
 	}
 	else
 	{
-		if (motor2Speed > 0)
+		if (p_motor2Speed > 0)
 		{
-			digitalWrite(m21Pin, HIGH);
-			digitalWrite(m22Pin, LOW);
-			analogWrite(m2Enable, motor2Speed);
+			digitalWrite(g_m21Pin, HIGH);
+			digitalWrite(g_m22Pin, LOW);
+			analogWrite(g_m2Enable, p_motor2Speed);
 		}
 
-		if (motor2Speed < 0)
+		if (p_motor2Speed < 0)
 		{
-			digitalWrite(m21Pin, LOW);
-			digitalWrite(m22Pin, HIGH);
-			analogWrite(m2Enable, -motor2Speed);
+			digitalWrite(g_m21Pin, LOW);
+			digitalWrite(g_m22Pin, HIGH);
+			analogWrite(g_m2Enable, -p_motor2Speed);
 		}
 	}
 }
+
+// debugging once used, here for faster further debugs
+// DEBUGGING
+// if(m1Speed > m2Speed)
+// {
+//     Serial.print("go left\n");
+// }
+// else if (m1Speed != m2Speed)
+// {
+//     Serial.print("go right\n");
+// }
+// Serial.print("Error: ");
+// Serial.println(error);
+// Serial.print("M1 speed: ");
+// Serial.println(m1Speed);
+//
+// Serial.print("M2 speed: ");
+// Serial.println(m2Speed);
+//
+// delay(250);
