@@ -8,32 +8,31 @@ const int g_m22Pin = 4;
 const int g_m1Enable = 11;
 const int g_m2Enable = 10;
 
-// motor constraints
-const int g_maxSpeed = 255;
-const int g_minSpeed = -255;
-#define MAX_BASE_SPEED 180
+#define MAX_MOTOR_SPEED 255
+#define MIN_MOTOR_SPEED -220
+#define MAX_BASE_SPEED 255
 
-#define MIN_BASE_SPEED_PERCENT 60
+#define MIN_BASE_SPEED_PERCENT 80
 #define MAX_BASE_SPEED_PERCENT 100
 #define MAX_DERIVATIVE_TWEAK_VAL 10
 
 int g_baseSpeed = MAX_BASE_SPEED;
 
 // PID controller constants
-float g_kp = 3.8;
-float g_ki = 0;
-float g_kd = 4.5;
+float g_kp = 10;
+float g_ki = 0.1;
+float g_kd = 10;
 int g_lastError = 0;
+
+// integrative functions related
+#define INTEGRAL_SIZE 50
+int g_recordedErrors[INTEGRAL_SIZE];
+int g_recordedErrIdx = 0;
 
 // sensor related
 QTRSensors g_qtr;
 const int g_sensorCount = 6;
 uint16_t g_sensorValues[g_sensorCount];
-
-// integrative functions related
-#define INTEGRAL_SIZE 100
-int g_recordedErrors[INTEGRAL_SIZE];
-int g_recordedErrIdx = 0;
 
 // updates the integrative rolling window array
 void addRecordedError(int p_error)
@@ -129,7 +128,7 @@ void smartCalibrateSensor()
         {
             if(currentTurnIdx > NUMBER_OF_TURNS)
             {
-                break; 
+                finishedCalibration = true; 
             }
 
             currentTurnIdx ++;
@@ -142,7 +141,7 @@ void smartCalibrateSensor()
         {
             if(currentTurnIdx > NUMBER_OF_TURNS)
             {
-                break; 
+                finishedCalibration = true; 
             }
 
             currentTurnIdx ++;
@@ -248,8 +247,8 @@ void constrainMotorSpeeds(int &p_m1Speed, int &p_m2Speed, int p_speedCorrection,
 	// making sure we don't go out of bounds
 	// maybe the lower bound should be negative, instead of 0? This of what happens when making a
 	// steep turn
-	p_m1Speed = constrain(p_m1Speed, 0, g_maxSpeed);
-	p_m2Speed = constrain(p_m2Speed, 0, g_maxSpeed);
+	p_m1Speed = constrain(p_m1Speed, MIN_MOTOR_SPEED, MAX_MOTOR_SPEED);
+	p_m2Speed = constrain(p_m2Speed, MIN_MOTOR_SPEED, MAX_MOTOR_SPEED);
 
 	// WARNING! SPEED CORRECTION OFTEN GOES BEYOND BASE SPEED!!
 }
@@ -259,7 +258,7 @@ void loop()
     int error = map(g_qtr.readLineBlack(g_sensorValues), MIN_QTR_SENSITIVITY, MAX_QTR_SENSITIVITY, MIN_ERROR, MAX_ERROR);
 	int speedCorrection = pidControl(g_kp, g_ki, g_kd ,g_lastError, error);
 	int m1Speed = g_baseSpeed;
-	Serial.println(g_baseSpeed);
+	Serial.println(speedCorrection);
 	int m2Speed = g_baseSpeed;
 
 	constrainMotorSpeeds(m1Speed, m2Speed, speedCorrection, error);

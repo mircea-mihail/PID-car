@@ -12,3 +12,179 @@ const int g_baseSpeed = 150;
 float g_kp = 3.7;
 float g_ki = 0;
 float g_kd = 3.8;
+
+
+20.196 -- good reactions, maybe more slowing down in corners? -- might be dangerous for some tight ones
+
+// motor constraints
+#define MAX_MOTOR_SPEED 255
+#define MIN_MOTOR_SPEED -75
+#define MAX_BASE_SPEED 200
+
+#define MIN_BASE_SPEED_PERCENT 60
+#define MAX_BASE_SPEED_PERCENT 100
+#define MAX_DERIVATIVE_TWEAK_VAL 10
+
+int g_baseSpeed = MAX_BASE_SPEED;
+
+// PID controller constants
+float g_kp = 4.6;
+float g_ki = 0;
+float g_kd = 5.4;
+int g_lastError = 0;
+
+
+20.622 -- bit safer in tight corners, where it could lose control
+
+
+// motor constraints
+#define MAX_MOTOR_SPEED 255
+#define MIN_MOTOR_SPEED -75
+#define MAX_BASE_SPEED 200
+
+#define MIN_BASE_SPEED_PERCENT 50
+#define MAX_BASE_SPEED_PERCENT 100
+#define MAX_DERIVATIVE_TWEAK_VAL 10
+
+int g_baseSpeed = MAX_BASE_SPEED;
+
+// PID controller constants
+float g_kp = 4.6;
+float g_ki = 0;
+float g_kd = 5.4;
+int g_lastError = 0;
+
+
+
+
+
+19.427 -- really stable, good, might be ok to be faster
+
+
+// motor constraints
+#define MAX_MOTOR_SPEED 255
+#define MIN_MOTOR_SPEED -75
+#define MAX_BASE_SPEED 200
+
+#define MIN_BASE_SPEED_PERCENT 50
+#define MAX_BASE_SPEED_PERCENT 100
+#define MAX_DERIVATIVE_TWEAK_VAL 10
+
+int g_baseSpeed = MAX_BASE_SPEED;
+
+// PID controller constants
+float g_kp = 5.75;
+float g_ki = 0;
+float g_kd = 6.75;
+int g_lastError = 0;
+
+// 16.4 sec PR
+#define MAX_MOTOR_SPEED 255
+#define MIN_MOTOR_SPEED -145
+#define MAX_BASE_SPEED 255
+
+float g_kp = 8;
+float g_ki = 0;
+float g_kd = 9.45;
+
+
+
+//16.3
+
+// motor constraints
+#define MAX_MOTOR_SPEED 255
+#define MIN_MOTOR_SPEED -255
+#define MAX_BASE_SPEED 255
+
+#define MIN_BASE_SPEED_PERCENT 70
+#define MAX_BASE_SPEED_PERCENT 100
+#define MAX_DERIVATIVE_TWEAK_VAL 10
+
+int g_baseSpeed = MAX_BASE_SPEED;
+
+// PID controller constants
+float g_kp = 10;
+float g_ki = 0;
+float g_kd = 11.81;
+int g_lastError = 0;
+
+
+// 15.98
+
+// motor constraints
+#define MAX_MOTOR_SPEED 255
+#define MIN_MOTOR_SPEED -255
+#define MAX_BASE_SPEED 255
+
+#define MIN_BASE_SPEED_PERCENT 80
+#define MAX_BASE_SPEED_PERCENT 100
+#define MAX_DERIVATIVE_TWEAK_VAL 10
+
+int g_baseSpeed = MAX_BASE_SPEED;
+
+// PID controller constants
+float g_kp = 10;
+float g_ki = 0;
+float g_kd = 11;
+int g_lastError = 0;
+
+// 15.8
+
+
+#define MIN_BASE_SPEED_PERCENT 80
+#define MAX_BASE_SPEED_PERCENT 100
+#define MAX_DERIVATIVE_TWEAK_VAL 10
+
+int g_baseSpeed = MAX_BASE_SPEED;
+
+// PID controller constants
+float g_kp = 10;
+float g_ki = 0.1;
+float g_kd = 10.4;
+int g_lastError = 0;
+
+// 15.6 - 15.8
+
+// motor constraints
+#define MAX_MOTOR_SPEED 255
+#define MIN_MOTOR_SPEED -255
+#define MAX_BASE_SPEED 255
+
+#define MIN_BASE_SPEED_PERCENT 80
+#define MAX_BASE_SPEED_PERCENT 100
+#define MAX_DERIVATIVE_TWEAK_VAL 10
+
+int g_baseSpeed = MAX_BASE_SPEED;
+
+// PID controller constants
+float g_kp = 10;
+float g_ki = 0.1;
+float g_kd = 10;
+int g_lastError = 0;
+
+// integrative functions related
+#define INTEGRAL_SIZE 50
+int g_recordedErrors[INTEGRAL_SIZE];
+int g_recordedErrIdx = 0;
+
+// 15.3
+
+// motor constraints
+#define MAX_MOTOR_SPEED 255
+#define MIN_MOTOR_SPEED -220
+#define MAX_BASE_SPEED 255
+
+#define MIN_BASE_SPEED_PERCENT 80
+#define MAX_BASE_SPEED_PERCENT 100
+#define MAX_DERIVATIVE_TWEAK_VAL 10
+
+int g_baseSpeed = MAX_BASE_SPEED;
+
+// PID controller constants
+float g_kp = 10;
+float g_ki = 0.1;
+float g_kd = 10;
+int g_lastError = 0;
+
+// integrative functions related
+#define INTEGRAL_SIZE 50
