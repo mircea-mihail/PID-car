@@ -1,0 +1,14 @@
+27.39 -- low speed, decent corners(finds the line after delays or tiny overshoots), but a bit slow at turning
+const int g_baseSpeed = 150;
+
+float g_kp = 3.7;
+float g_ki = 0;
+float g_kd = 3.3;
+
+27 -- slow corner speed, but pretty good accuracy in cornering:
+const int g_baseSpeed = 150;
+
+// PID controller constants
+float g_kp = 3.7;
+float g_ki = 0;
+float g_kd = 3.8;

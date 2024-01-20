@@ -11,12 +11,18 @@ const int g_m2Enable = 10;
 // motor constraints
 const int g_maxSpeed = 255;
 const int g_minSpeed = -255;
-const int g_baseSpeed = 200;
+#define MAX_BASE_SPEED 180
+
+#define MIN_BASE_SPEED_PERCENT 60
+#define MAX_BASE_SPEED_PERCENT 100
+#define MAX_DERIVATIVE_TWEAK_VAL 10
+
+int g_baseSpeed = MAX_BASE_SPEED;
 
 // PID controller constants
-float g_kp = 10;
-float g_ki = 0.001;
-float g_kd = 3;
+float g_kp = 3.8;
+float g_ki = 0;
+float g_kd = 4.5;
 int g_lastError = 0;
 
 // sensor related
@@ -155,6 +161,20 @@ void smartCalibrateSensor()
 // 	{
 // 		A0, A1, A2, A3, A4, A5
 // 	}, g_sensorCount);
+
+void tweakBaseSpeed(int p_derivative)
+{
+	p_derivative = abs(p_derivative);
+
+	if(p_derivative > 10)
+	{
+		p_derivative = 10;
+	}
+
+	float basePercentage = map(p_derivative, 0, MAX_DERIVATIVE_TWEAK_VAL, MAX_BASE_SPEED_PERCENT, MIN_BASE_SPEED_PERCENT);
+	g_baseSpeed = basePercentage * MAX_BASE_SPEED / 100;
+}
+
 const uint8_t g_sensorPins[] = { A0, A1, A2, A3, A4, A5 };
 
 void setup()
@@ -183,20 +203,28 @@ void setup()
 #define MIN_ERROR -50
 #define MAX_ERROR 50
 
+#define DERIVATIVE_ERROR_TRACEBACK 10
+
 // calculate PID value based on error, kp, kd, ki
 int pidControl(float p_kp, float p_ki, float p_kd, int &p_lastError, int p_error)
 {
     int p = p_error;
-	int d = p_error - p_lastError;
+	
+	int lastErrorIdx = g_recordedErrIdx - DERIVATIVE_ERROR_TRACEBACK;
+	if(lastErrorIdx < 0)
+	{
+		lastErrorIdx = INTEGRAL_SIZE + lastErrorIdx; 
+	}
+	int d = p_error - g_recordedErrors[lastErrorIdx];
     
     addRecordedError(p_error);
 	int i = getIntegral();
 	if(-1 <= p_error && p_error <= 1) {
         i = 0;
     }
-
     p_lastError = p_error;
 
+	tweakBaseSpeed(d);
 	return p_kp *p + p_ki *i + p_kd * d;
 }
 
@@ -231,6 +259,7 @@ void loop()
     int error = map(g_qtr.readLineBlack(g_sensorValues), MIN_QTR_SENSITIVITY, MAX_QTR_SENSITIVITY, MIN_ERROR, MAX_ERROR);
 	int speedCorrection = pidControl(g_kp, g_ki, g_kd ,g_lastError, error);
 	int m1Speed = g_baseSpeed;
+	Serial.println(g_baseSpeed);
 	int m2Speed = g_baseSpeed;
 
 	constrainMotorSpeeds(m1Speed, m2Speed, speedCorrection, error);
