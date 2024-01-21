@@ -5,22 +5,15 @@ This was developed in a team made up of Moraru Ilinca (https://github.com/ilinca
 
 The task for the project was to develop a line follower that would complete a course designed by the professors in as little time as possible. We had the final track on hand during development so tweaking the design to optimise maximum performance on it was nice. Check out the final version of the project performing for our grade on youtube: https://youtube.com/watch?v=Q4rl68Txs_0 (we got a 10). 
 
-<details>
-<summary>
 <h3>The Design</h3>
-</summary>
 
 The design of the robot was made using the initial plastic chassis from it's kit as a stencil. We cut out a new one from Styrofoam and used it to attach the components in the same way as the original.
 
 The weight distribution was made as even as possible, with the arduino at the back of the car, between the wheels, the LiPo battery in the middle and the small breadboard was placed on top of the ball caster, before the reflectance sensors.
 
 The motors were attached to the body using 3D printed brackets that were also provided to us.
-</details>
 
-<details>
-<summary>
-<h2>The Code</h3>
-</summary>
+<h3>The Code</h3>
 
 I'd like to go into detail a bit about the code behind this project. There are several key aspects that made everything work as well as it did that are worth talking about. 
 
@@ -31,12 +24,8 @@ Second of all, the motors going in reverse. When making a sharp turn you want on
 Also, another thing that shaved a few seconds of the final time was a function that adjusted the speed of the car depending on the derivative. Looking back, we should have had the function kick in not from 0 to 10, but from something like 4 or 5 to 10, so that the car would keep top speed on wide curves.
 
 The integrative is just a sliding window keeping track of 50 errors, with an index keeping track of the current error insertion place.
-</details>
 
-<details>
-<summary>
 <h3>The Components</h3>
-</summary>
 
   <ul>
     <li>Arduino Board</li>
@@ -53,7 +42,7 @@ The integrative is just a sliding window keeping track of 50 errors, with an ind
   </ul>
 </details>
 
-At the end of the project, we managed to get the robot to complete the course in 15.081 seconds. This run can also be seen in the video showcasing the functionality.
+In the end of the project, we managed to get the robot to complete the course in 15.081 seconds. This run can also be seen in the video showcasing the functionality.
 
 <img src="unfinished-version.jpg" alt="unfinished-version" height="270"/> <img src="final-form.jpg" alt="final-form" height="270"/>
 
