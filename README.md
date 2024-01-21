@@ -7,7 +7,7 @@ The task for the project was to develop a line follower that would complete a co
 
 <details>
 <summary>
-The Design
+<h3>The Design</h3>
 </summary>
 
 The design of the robot was made using the initial plastic chassis from it's kit as a stencil. We cut out a new one from Styrofoam and used it to attach the components in the same way as the original.
@@ -19,7 +19,7 @@ The motors were attached to the body using 3D printed brackets that were also pr
 
 <details>
 <summary>
-The Code
+<h2>The Code</h3>
 </summary>
 
 I'd like to go into detail a bit about the code behind this project. There are several key aspects that made everything work as well as it did that are worth talking about. 
@@ -35,7 +35,7 @@ The integrative is just a sliding window keeping track of 50 errors, with an ind
 
 <details>
 <summary>
-Components
+<h3>The Components</h3>
 </summary>
 
   <ul>
@@ -55,7 +55,7 @@ Components
 
 At the end of the project, we managed to get the robot to complete the course in 15.081 seconds. This run can also be seen in the video showcasing the functionality.
 
-<img src="unfinished-version.jpg" alt="unfinished-version" height="270"/><img src="final-form.jpg" alt="final-form" height="270"/>
+<img src="unfinished-version.jpg" alt="unfinished-version" height="270"/> <img src="final-form.jpg" alt="final-form" height="270"/>
 
 
 
